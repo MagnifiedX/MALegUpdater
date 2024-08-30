@@ -33,52 +33,83 @@
 #---------------------------------------------------------[Initialisations]--------------------------------------------------------
 
 #Set Error Action to Silently Continue
-$ErrorActionPreference = "SilentlyContinue"
+$ErrorActionPreference = "Stop"
 
 #Dot Source required Function Libraries
-. "C:\Scripts\Functions\Logging_Functions.ps1"
+#. "C:\Scripts\Functions\Logging_Functions.ps1"
 
 #----------------------------------------------------------[Declarations]----------------------------------------------------------
 
 #Script Version
-$sScriptVersion = "1.0"
+$sScriptVersion = "0.01"
 
 #Log File Info
-$sLogPath = "C:\Windows\Temp"
-$sLogName = "<script_name>.log"
+$sLogPath = "C:\temp"
+$sLogName = "malegupdater-$(Get-Date -Format FileDateTimeUniversal).log"
 $sLogFile = Join-Path -Path $sLogPath -ChildPath $sLogName
 
 #-----------------------------------------------------------[Functions]------------------------------------------------------------
 
-<#
 
-Function <FunctionName>{
-  Param()
+
+function MALegUpdater {
+  param(
+      # Sets default session number to the 2023-2024 legislative session
+      [int]$SessionNumber = 193,
+      
+      # Sets the bill number parameter
+      [string]$BillNumber
+  )
   
-  Begin{
-    Log-Write -LogPath $sLogFile -LineValue "<description of what is going on>..."
+  begin{
+    # Validates the input parameters, and prompts if not provided
+    $SessionNumberTemp = Read-Host -Prompt "Please specify the legislative session (Default: 193) you wish to query."
+    Log-Write -LogPath $sLogFile -LineValue "SessionNumberTemp Value entered: $SessionNumberTemp"
+      
+    if ($SessionNumberTemp -ne 193 ) {
+      Write-Host "Using session # $SessionNumberTemp."
+    }
+      
+    else {
+       $SessionNumberTemp = $null
+       Write-Host "Using default session # 193."
+    }
+
+    $BillNumberTemp = Read-Host "Please specify the bill you wish to query (Format: HD#### or SD####)"
+    Log-Write -LogPath $sLogFile -LineValue "BillNumberTemp Value Entered: $BillNumberTemp"
   }
   
-  Process{
-    Try{
-      <code goes here>
+  process{
+    try{
+      # Validating inputs
+      # TBD, for now just assigning the inputs to their main variables
+      if ($SessionNumberTemp -not $null) {
+        $SessionNumber = $SessioNumberTemp
+      }
+      elseif ($SessionNumberTemp -is $null) {
+        $SessionNumber = 193
+      }
+      else {
+        throw $SessionNumberTemp
+      }
+      $webRequest = Invoke-WebRequest -Uri "https://malegislature.gov/Bills/$SessionNumber/$BillNumber/BillHistory"
     }
     
-    Catch{
+    catch{
       Log-Error -LogPath $sLogFile -ErrorDesc $_.Exception -ExitGracefully $True
-      Break
+      break
     }
   }
   
-  End{
-    If($?){
+  end{
+    if($?){
       Log-Write -LogPath $sLogFile -LineValue "Completed Successfully."
       Log-Write -LogPath $sLogFile -LineValue " "
     }
   }
 }
 
-#>
+
 
 #-----------------------------------------------------------[Execution]------------------------------------------------------------
 
